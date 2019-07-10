@@ -1,0 +1,66 @@
+package ru.avalon.blog.servlets;
+
+import java.io.IOException;
+import javax.ejb.EJB;
+import javax.inject.Inject;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import ru.avalon.blog.services.AuthService;
+
+        
+
+
+
+@WebServlet("/comment/create")
+public class CommentCreateServlet extends HttpServlet {
+
+    private static final String JSP = "/WEB-INF/pages/comment/create.jsp";
+    
+    @Inject AuthService authService;
+    
+    @EJB CommentService commentService;
+    
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
+        if(authService.isSignedIn()){
+            request.getRequestDispatcher(JSP)
+                    .forward(request,response);
+        } else {
+            redirectToReferer(request, response);
+        }
+        
+    }
+
+  @Override
+  protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException{
+        String title = request.getParameter("title");
+        String content = request.getParameter("content");
+        try{
+            if(title == null || title.trim().isEmpty()) {
+                throw new RequiredDataException("error.title.required");
+            }
+             if(content == null || content.trim().isEmpty()) {
+                throw new RequiredDataException("error.content.required");
+            }
+             User user = authService.getUser();
+             Comment comment = new Comment(title, content, user);
+             
+             commentService.create(comment);
+             redirect(request, response, request.getContextPath());
+             
+             
+             
+             
+             
+             
+        } catch (Exception e) {
+           request.setAttribute("error", e.getMessage());
+            doGet(request, response);
+        }
+        }
+        
+    
+}   
